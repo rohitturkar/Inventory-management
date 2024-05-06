@@ -31,14 +31,7 @@ const Sidebar = () => {
             <span>Product</span>
           </Link>
 
-          <Link
-            to='/department'
-            className={`text-md font-semibold px-2 py-2 flex items-center gap-1 ${location.pathname === '/department' ? 'bg-gray-200  rounded-lg' : ''}`}
-          >
-            <CiShop size={22} color='#222'/>
-            
-            <span>Departments</span>
-          </Link>
+         
         </ul>
       </div>
     </div>
