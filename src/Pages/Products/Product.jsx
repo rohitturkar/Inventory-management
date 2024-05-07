@@ -22,13 +22,13 @@ export default function Product() {
 
 
   const inventoryData = useSelector((state) => state.product.inventoryData);
-  useEffect(()=>{
-    productApi.getAllProds()
-    .then((data) => {
-      dispatch(setAllProds(data?.data))
-      // dispatch(getAllProducts(1))
-      })
-  },[])
+  // useEffect(()=>{
+  //   productApi.getAllProds()
+  //   .then((data) => {
+  //     dispatch(setAllProds(data?.data))
+     
+  //     })
+  // },[])
 
   const filteredData = inventoryData.filter((item) => {
     if (checked) {
