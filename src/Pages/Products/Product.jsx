@@ -5,10 +5,12 @@ import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { ADD_INVENTORY_DATA, setAllProds } from "../../Redux/Slices/product/slice";
-import Apis from "../../services/Index"
+import {
+  ADD_INVENTORY_DATA,
+  setAllProds,
+} from "../../Redux/Slices/product/slice";
+import Apis from "../../services/Index";
 import { getAllProducts } from "../../Redux/Slices/product/thunk";
-
 
 export default function Product() {
   const [selectedDepartment, setSelectedDepartment] = useState("Kitchen");
@@ -19,16 +21,21 @@ export default function Product() {
   const productApi = Apis.useProductClient();
   const dispatch = useDispatch();
 
-
-
   const inventoryData = useSelector((state) => state.product.inventoryData);
-  // useEffect(()=>{
-  //   productApi.getAllProds()
-  //   .then((data) => {
-  //     dispatch(setAllProds(data?.data))
-     
-  //     })
-  // },[])
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await productApi.getAllProds();
+        dispatch(setAllProds(data?.data));
+        console.log(data?.data);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+
+   
+    fetchData();
+  }, []);
 
   const filteredData = inventoryData.filter((item) => {
     if (checked) {
@@ -177,12 +184,12 @@ export default function Product() {
                     </td>
                     <td className="whitespace-nowrap px-12 py-4">
                       <div
-                        className={`text-sm text-gray-700 font-semibold font  `}
+                        className={`text-sm text-gray-700 font-semibold font flex items-center  gap-1  `}
                       >
                         {item?.stock}{" "}
                         <span>
                           {item?.stock < 10 ? (
-                            <FaAnglesDown size={22} color="red" />
+                            <FaAnglesDown size={10} color="red" />
                           ) : (
                             ""
                           )}
@@ -226,8 +233,8 @@ function BasicModal({ open, handleClose }) {
     price: 0,
     stock: 0,
     supplier: "",
-    delivered : 10,
-    sku : "KTH",
+    delivered: 10,
+    sku: "KTH",
     imageUrl: "",
   };
 
@@ -246,17 +253,17 @@ function BasicModal({ open, handleClose }) {
   });
   const productApi = Apis.useProductClient();
 
-
   const handleSubmit = (values) => {
     values.id = Math.floor(Math.random() * 99999);
-    productApi.createProduct(values)
-    .then((data) => {
-      console.log(" hello createed" , data)
-      handleClose();
-    })
-    .catch(err => {
-      console.log("errrr", err)
-    })
+    productApi
+      .createProduct(values)
+      .then((data) => {
+        console.log(" hello createed", data);
+        handleClose();
+      })
+      .catch((err) => {
+        console.log("errrr", err);
+      });
     // console.log(values);
   };
   return (
