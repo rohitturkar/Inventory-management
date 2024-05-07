@@ -6,7 +6,7 @@ const Navbar = () => {
     <div className="py-2 bg-transparent top-0 sticky flex justify-end px-6 items-center  ">
      
       <div>
-      <Avatar name="Admin" size="40" round="20px"  color="black"/>
+      <Avatar name="Admin" size="40" round="20px"  color="black" className="cursor-pointer"/>
       </div>
     </div>
   );

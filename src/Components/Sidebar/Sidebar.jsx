@@ -12,8 +12,8 @@ const Sidebar = () => {
   return (
     <div className='fixed left-0  w-2/12 h-full bg-white  shadow-2xl px-2 py-2 hidden lg:block'>
 
-<div className="text-gray-900 font-bold text-lg px-2 py-2">Inventoryfy</div>
-      <div className='mt-20'>
+<div className="text-gray-700 font-bold text-2xl px-2 py-2 ">Inventoryfy</div>
+      <div className='mt-10'>
         <ul className='flex flex-col gap-4 justify-center'>
           <Link
             to="/"
