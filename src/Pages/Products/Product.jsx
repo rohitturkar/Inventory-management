@@ -11,13 +11,19 @@ import {
 } from "../../Redux/Slices/product/slice";
 import Apis from "../../services/Index";
 import { getAllProducts } from "../../Redux/Slices/product/thunk";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function Product() {
   const [selectedDepartment, setSelectedDepartment] = useState("Kitchen");
   const [checked, setChecked] = useState(false);
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
+  const [id, setId] = useState(null);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+
+  const navigate = useNavigate();
+
   const productApi = Apis.useProductClient();
   const dispatch = useDispatch();
 
@@ -33,7 +39,6 @@ export default function Product() {
       }
     };
 
-   
     fetchData();
   }, []);
 
@@ -44,10 +49,6 @@ export default function Product() {
       return item.department === selectedDepartment && item.stock > 0;
     }
   });
-
-  const navigateToProduct = (productId) => {
-    window.location.href = `/product/${productId}`;
-  };
 
   return (
     <>
@@ -81,13 +82,12 @@ export default function Product() {
             </select>
 
             <div>
-              <button
-                type="button"
+              <Link
+                to="/add_products"
                 class="rounded-md bg-black px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-black/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
-                onClick={handleOpen}
               >
                 Add Product
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -130,7 +130,7 @@ export default function Product() {
                   scope="col"
                   className="px-4 py-3.5 text-left text-sm font-normal text-gray-700"
                 >
-                  Edit
+                  Action
                 </th>
               </tr>
             </thead>
@@ -152,12 +152,11 @@ export default function Product() {
                 </tr>
               ) : (
                 filteredData.map((item) => (
-                  <tr
-                    key={item?.name}
-                    className="cursor-pointer"
-                    onClick={() => navigateToProduct(item.id)}
-                  >
-                    <td className="whitespace-nowrap px-4 py-4">
+                  <tr key={item?.name} className="cursor-pointer">
+                    <td
+                      className="whitespace-nowrap px-4 py-4"
+                      onClick={() => navigate(`/product/${item.id}`)}
+                    >
                       <div className="flex items-center">
                         <div className="h-40 w-40 flex-shrink-0">
                           <img
@@ -169,20 +168,20 @@ export default function Product() {
                       </div>
                     </td>
 
-                    <td className="whitespace-nowrap px-12 py-4">
+                    <td className="whitespace-nowrap px-4 py-4">
                       <div className="text-sm text-gray-900 ">{item.name}</div>
                     </td>
-                    <td className="whitespace-wrap ">
+                    <td className="whitespace-wrap  py-4 ">
                       <div className="text-sm text-gray-900 ">
                         {item?.description}
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-12 py-4">
+                    <td className="whitespace-nowrap px-12  py-4">
                       <div className="text-sm text-gray-900 ">
                         {item?.price}
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-12 py-4">
+                    <td className="whitespace-nowrap  px-12 py-4">
                       <div
                         className={`text-sm text-gray-700 font-semibold font flex items-center  gap-1  `}
                       >
@@ -196,8 +195,17 @@ export default function Product() {
                         </span>{" "}
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-medium">
-                      <a href="#" className="text-gray-700">
+                    <td className="whitespace-nowrap px-12 py-4 text-right text-sm font-medium ">
+                      {/* <a  onClick={handleOpen}  className="text-gray-700 border rounded-lg py-1 px-2 cursor-pointer mr-2">
+                        View 
+                      </a> */}
+                      <a
+                        onClick={()=>{
+                          handleOpen()
+                          setId(item.id)
+                        }}
+                        className="text-gray-700 border rounded-lg py-1 px-2 cursor-pointer"
+                      >
                         Edit
                       </a>
                     </td>
@@ -208,7 +216,12 @@ export default function Product() {
           </table>
         </div>
       </div>
-      <BasicModal open={open} handleClose={handleClose} />
+      <BasicModal
+        open={open}
+        handleClose={handleClose}
+        inventoryData={inventoryData}
+        id={id}
+      />
     </>
   );
 }
@@ -218,25 +231,18 @@ const style = {
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 500,
+  width: 600,
   bgcolor: "background.paper",
   borderRadius: 2,
-  boxShadow: 24,
+  boxShadow: 40,
   p: 2,
+  border:"none",
 };
 
-function BasicModal({ open, handleClose }) {
-  const initialValues = {
-    department: "",
-    name: "",
-    description: "",
-    price: 0,
-    stock: 0,
-    supplier: "",
-    delivered: 10,
-    sku: "KTH",
-    imageUrl: "",
-  };
+function BasicModal({ open, handleClose,inventoryData,id }) {
+
+  const initialValues=inventoryData.filter(item=>item.id===id)[0]
+  console.log(initialValues,'initialValues')
 
   const validationSchema = Yup.object().shape({
     department: Yup.string().required("Department is required"),
@@ -251,7 +257,7 @@ function BasicModal({ open, handleClose }) {
     supplier: Yup.string().required("Supplier Name is required"),
     imageUrl: Yup.string().url("Invalid URL").required("Image URL is required"),
   });
-  const productApi = Apis.useProductClient();
+  
 
   const handleSubmit = (values) => {
     values.id = Math.floor(Math.random() * 99999);
@@ -282,7 +288,7 @@ function BasicModal({ open, handleClose }) {
             onSubmit={handleSubmit}
           >
             {({ errors, touched }) => (
-              <Form className="grid grid-cols-12 gap-2">
+              <Form className="grid grid-cols-12 gap-4">
                 <div className="col-span-12 flex flex-col gap-2">
                   <label className="text-xs" htmlFor="department">
                     Department
@@ -291,7 +297,7 @@ function BasicModal({ open, handleClose }) {
                     as="select"
                     id="department"
                     name="department"
-                    className="px-2 py-1 border"
+                    className="px-2 py-4 rounded-md border text-xs "
                   >
                     <option value="">Select Department</option>
                     <option value="Toys">Toys</option>
@@ -313,7 +319,7 @@ function BasicModal({ open, handleClose }) {
                     type="text"
                     id="name"
                     name="name"
-                    className="px-2 py-1 border"
+                    className="px-2 py-4 rounded-md border text-xs "
                   />
                   <ErrorMessage
                     name="name"
@@ -329,7 +335,7 @@ function BasicModal({ open, handleClose }) {
                     type="number"
                     id="price"
                     name="price"
-                    className="px-2 py-1 border"
+                    className="px-2 py-4 rounded-md border text-xs "
                   />
                   <ErrorMessage
                     name="price"
@@ -346,7 +352,7 @@ function BasicModal({ open, handleClose }) {
                     type="number"
                     id="stock"
                     name="stock"
-                    className="px-2 py-1 border"
+                    className="px-2 py-4 rounded-md border text-xs "
                   />
                   <ErrorMessage
                     name="stock"
@@ -363,7 +369,7 @@ function BasicModal({ open, handleClose }) {
                     type="text"
                     id="supplier"
                     name="supplier"
-                    className="px-2 py-1 border"
+                    className="px-2 py-4 rounded-md border text-xs "
                   />
                   <ErrorMessage
                     name="supplier"
@@ -379,7 +385,7 @@ function BasicModal({ open, handleClose }) {
                     type="text"
                     id="description"
                     name="description"
-                    className="px-2 py-1 border"
+                    className="px-2 py-4 rounded-md border text-xs "
                   />
                   <ErrorMessage
                     name="description"
@@ -395,7 +401,7 @@ function BasicModal({ open, handleClose }) {
                     type="text"
                     id="imageUrl"
                     name="imageUrl"
-                    className="px-2 py-1 border"
+                    className="px-2 py-4 rounded-md border text-xs "
                   />
                   <ErrorMessage
                     name="imageUrl"
@@ -406,7 +412,7 @@ function BasicModal({ open, handleClose }) {
 
                 <button
                   type="submit"
-                  className="col-span-12 w-full text-center bg-[#222]  py-1 rounded-lg text-white text-sm "
+                  className="col-span-12  w-full text-center bg-[#222]  py-4 px-2 rounded-lg text-white text-sm "
                 >
                   Create New Product
                 </button>
