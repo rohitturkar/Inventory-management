@@ -281,7 +281,7 @@ function BasicModal({ open, handleClose,inventoryData,id }) {
         aria-describedby="modal-modal-description"
       >
         <Box sx={style}>
-          <div className="text-center text-xs font-semibold ">Add Details</div>
+          <div className="text-center text-xs font-semibold ">Edit Details</div>
           <Formik
             initialValues={initialValues}
             validationSchema={validationSchema}
@@ -414,7 +414,7 @@ function BasicModal({ open, handleClose,inventoryData,id }) {
                   type="submit"
                   className="col-span-12  w-full text-center bg-[#222]  py-4 px-2 rounded-lg text-white text-sm "
                 >
-                  Create New Product
+                  Edit Details
                 </button>
               </Form>
             )}
