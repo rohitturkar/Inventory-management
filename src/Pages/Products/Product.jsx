@@ -1,10 +1,14 @@
-import React, { useState } from "react";
-import { useSelector } from "react-redux";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { FaAnglesDown } from "react-icons/fa6";
 import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
+import { ADD_INVENTORY_DATA, setAllProds } from "../../Redux/Slices/product/slice";
+import Apis from "../../services/Index"
+import { getAllProducts } from "../../Redux/Slices/product/thunk";
+
 
 export default function Product() {
   const [selectedDepartment, setSelectedDepartment] = useState("Kitchen");
@@ -12,8 +16,19 @@ export default function Product() {
   const [open, setOpen] = React.useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+  const productApi = Apis.useProductClient();
+  const dispatch = useDispatch();
+
+
 
   const inventoryData = useSelector((state) => state.product.inventoryData);
+  useEffect(()=>{
+    productApi.getAllProds()
+    .then((data) => {
+      dispatch(setAllProds(data?.data))
+      // dispatch(getAllProducts(1))
+      })
+  },[])
 
   const filteredData = inventoryData.filter((item) => {
     if (checked) {
@@ -206,31 +221,43 @@ const style = {
 function BasicModal({ open, handleClose }) {
   const initialValues = {
     department: "",
-    productName: "",
+    name: "",
     description: "",
     price: 0,
-    stockAvailable: 0,
-    supplierName: "",
+    stock: 0,
+    supplier: "",
+    delivered : 10,
+    sku : "KTH",
     imageUrl: "",
   };
 
   const validationSchema = Yup.object().shape({
     department: Yup.string().required("Department is required"),
-    productName: Yup.string().required("Product Name is required"),
+    name: Yup.string().required("Product Name is required"),
     description: Yup.string().required("Description is required"),
     price: Yup.number()
       .min(500, "Price must be greater than 499/-")
       .required("Price is required"),
-    stockAvailable: Yup.number()
+    stock: Yup.number()
       .min(4, "Stock Available must be greater than 4")
       .required("Stock Available is required"),
-    supplierName: Yup.string().required("Supplier Name is required"),
+    supplier: Yup.string().required("Supplier Name is required"),
     imageUrl: Yup.string().url("Invalid URL").required("Image URL is required"),
   });
+  const productApi = Apis.useProductClient();
+
 
   const handleSubmit = (values) => {
-    // Handle form submission here
-    console.log(values);
+    values.id = Math.floor(Math.random() * 99999);
+    productApi.createProduct(values)
+    .then((data) => {
+      console.log(" hello createed" , data)
+      handleClose();
+    })
+    .catch(err => {
+      console.log("errrr", err)
+    })
+    // console.log(values);
   };
   return (
     <div>
@@ -272,17 +299,17 @@ function BasicModal({ open, handleClose }) {
                 </div>
 
                 <div className="col-span-6 flex flex-col gap-2">
-                  <label className="text-xs" htmlFor="productName">
+                  <label className="text-xs" htmlFor="name">
                     Product Name
                   </label>
                   <Field
                     type="text"
-                    id="productName"
-                    name="productName"
+                    id="name"
+                    name="name"
                     className="px-2 py-1 border"
                   />
                   <ErrorMessage
-                    name="productName"
+                    name="name"
                     component="div"
                     className="text-red-500 text-xs"
                   />
@@ -305,34 +332,34 @@ function BasicModal({ open, handleClose }) {
                 </div>
 
                 <div className="col-span-6 flex flex-col gap-2">
-                  <label className="text-xs" htmlFor="stockAvailable">
+                  <label className="text-xs" htmlFor="stock">
                     Stock Available
                   </label>
                   <Field
                     type="number"
-                    id="stockAvailable"
-                    name="stockAvailable"
+                    id="stock"
+                    name="stock"
                     className="px-2 py-1 border"
                   />
                   <ErrorMessage
-                    name="stockAvailable"
+                    name="stock"
                     component="div"
                     className="text-red-500 text-xs"
                   />
                 </div>
 
                 <div className="col-span-6 flex flex-col gap-2">
-                  <label className="text-xs" htmlFor="supplierName">
+                  <label className="text-xs" htmlFor="supplier">
                     Supplier Name
                   </label>
                   <Field
                     type="text"
-                    id="supplierName"
-                    name="supplierName"
+                    id="supplier"
+                    name="supplier"
                     className="px-2 py-1 border"
                   />
                   <ErrorMessage
-                    name="supplierName"
+                    name="supplier"
                     component="div"
                     className="text-red-500 text-xs"
                   />
