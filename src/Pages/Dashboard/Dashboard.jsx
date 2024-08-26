@@ -1,9 +1,11 @@
 import React from 'react'
-import Navbar from '../../Components/Navbar/Navbar'
+import { useSelector } from 'react-redux';
 import { FaCartShopping } from "react-icons/fa6";
 import { MdDeliveryDining } from "react-icons/md";
 import { CiShoppingBasket } from "react-icons/ci";
 const Dashboard = () => {
+
+  const inventoryData=useSelector((state)=>state.product.inventoryData)
   return (
   
         
@@ -13,7 +15,7 @@ const Dashboard = () => {
    <span><FaCartShopping size='100' color='white'/></span>
    <div className='flex gap-2 flex-col'  >
    <h2 className='text-5xl text-white font-bold'>
-    2500
+   {inventoryData?.length}
     </h2>
     <p className='text-white text-sm font-semibold'>Total Stocks</p>
   </div>
@@ -23,7 +25,7 @@ const Dashboard = () => {
    <span><MdDeliveryDining size='100' color='white'/></span>
    <div className='flex gap-2 flex-col'  >
    <h2 className='text-5xl text-white font-bold'>
-    100+
+   2000
     </h2>
     <p className='text-white text-sm font-semibold'>Total Delivery</p>
   </div>
@@ -33,7 +35,7 @@ const Dashboard = () => {
    <span><CiShoppingBasket size='100' color='white'/></span>
    <div className='flex gap-2 flex-col'  >
    <h2 className='text-5xl text-red-500 font-bold'>
-    2
+   {inventoryData?.filter(element=>element.price<10).length}
     </h2>
     <p className='text-white text-sm font-semibold'>Low Stoks Item</p>
   </div>

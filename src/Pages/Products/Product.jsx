@@ -5,42 +5,30 @@ import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import {
-  ADD_INVENTORY_DATA,
-  setAllProds,
-} from "../../Redux/Slices/product/slice";
-import Apis from "../../services/Index";
-import { getAllProducts } from "../../Redux/Slices/product/thunk";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { getDatabase, ref, get, remove } from "firebase/database";
+import { RiArrowDropDownLine } from "react-icons/ri";
+import app from "../../firebase";
+import toast from "react-hot-toast";
+import { SET_PRODCUT_DATA } from "../../Redux/Slices/productSlice";
+import EditProduct from "./EditProduct";
+import Delete from "./DeleteProduct";
 
 export default function Product() {
-  const [selectedDepartment, setSelectedDepartment] = useState("Kitchen");
+  const [selectedDepartment, setSelectedDepartment] = useState("Wired");
   const [checked, setChecked] = useState(false);
   const [open, setOpen] = useState(false);
+  const [open1, setOpen1] = useState(false);
   const [id, setId] = useState(null);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const navigate = useNavigate();
-
-  const productApi = Apis.useProductClient();
-  const dispatch = useDispatch();
-
+  const handleCloseForDelete = () => setOpen1(false);
   const inventoryData = useSelector((state) => state.product.inventoryData);
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await productApi.getAllProds();
-        dispatch(setAllProds(data?.data));
-        console.log(data?.data);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      }
-    };
 
-    fetchData();
-  }, []);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const filteredData = inventoryData.filter((item) => {
     if (checked) {
@@ -49,6 +37,30 @@ export default function Product() {
       return item.department === selectedDepartment && item.stock > 0;
     }
   });
+
+  const fetchInventoryData = async () => {
+    const db = getDatabase(app);
+    const databaseNodeReference = ref(db, "inventory");
+    const snapshot = await get(databaseNodeReference);
+
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      const arrayOfInventory = Object.keys(data).map((elementId) => {
+        return {
+          ...data[elementId],
+          id: elementId,
+        };
+      });
+
+      dispatch(SET_PRODCUT_DATA(arrayOfInventory));
+    } else {
+      toast.error(`Data is not available`);
+    }
+  };
+
+  useEffect(() => {
+    fetchInventoryData();
+  }, [open,open1]);
 
   return (
     <>
@@ -72,13 +84,13 @@ export default function Product() {
 
           <div className="flex justify-between gap-2 items-center">
             <select
-              className="border p-2 rounded-lg"
+              className="border p-2 rounded-lg cursor-pointer"
               value={selectedDepartment}
               onChange={(event) => setSelectedDepartment(event.target.value)}
             >
-              <option value="Kitchen">Kitchen</option>
-              <option value="Toys">Toys</option>
-              <option value="Clothing">Clothing</option>
+              <option value="Wireless">Wireless</option>
+              <option value="Wired">Wired</option>
+              <option value="Speaker">Speaker</option>
             </select>
 
             <div>
@@ -153,10 +165,7 @@ export default function Product() {
               ) : (
                 filteredData.map((item) => (
                   <tr key={item?.name} className="cursor-pointer">
-                    <td
-                      className="whitespace-nowrap px-4 py-4"
-                      onClick={() => navigate(`/product/${item.id}`)}
-                    >
+                    <td className="whitespace-nowrap px-4 py-4">
                       <div className="flex items-center">
                         <div className="h-40 w-40 flex-shrink-0">
                           <img
@@ -196,18 +205,32 @@ export default function Product() {
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-12 py-4 text-right text-sm font-medium ">
-                      {/* <a  onClick={handleOpen}  className="text-gray-700 border rounded-lg py-1 px-2 cursor-pointer mr-2">
-                        View 
-                      </a> */}
-                      <a
-                        onClick={()=>{
-                          handleOpen()
-                          setId(item.id)
-                        }}
-                        className="text-gray-700 border rounded-lg py-1 px-2 cursor-pointer"
-                      >
-                        Edit
-                      </a>
+                      <details className="dropdown">
+                        <summary className="btn rounded-full p-2">
+                          <RiArrowDropDownLine size={30} />
+                        </summary>
+                        <ul className="menu dropdown-content bg-base-100 rounded-box z-[1] w-30 p-2 shadow mr-2">
+                          <li onClick={() => navigate(`/product/${item.id}`)}>
+                            <a>View</a>
+                          </li>
+                          <li
+                            onClick={() => {
+                              handleOpen();
+                              setId(item.id);
+                            }}
+                          >
+                            <a>Edit</a>
+                          </li>
+                          <li
+                            onClick={() => {
+                              setOpen1(true);
+                              setId(item.id);
+                            }}
+                          >
+                            <a>Delete</a>
+                          </li>
+                        </ul>
+                      </details>
                     </td>
                   </tr>
                 ))
@@ -216,211 +239,18 @@ export default function Product() {
           </table>
         </div>
       </div>
-      <BasicModal
+      <EditProduct
         open={open}
         handleClose={handleClose}
         inventoryData={inventoryData}
         id={id}
       />
+      <Delete
+        open={open1}
+        handleClose={handleCloseForDelete}
+        inventoryData={inventoryData}
+        id={id}
+      />
     </>
-  );
-}
-
-const style = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  width: 600,
-  bgcolor: "background.paper",
-  borderRadius: 2,
-  boxShadow: 40,
-  p: 2,
-  border:"none",
-};
-
-function BasicModal({ open, handleClose,inventoryData,id }) {
-
-  const initialValues=inventoryData.filter(item=>item.id===id)[0]
-  console.log(initialValues,'initialValues')
-
-  const validationSchema = Yup.object().shape({
-    department: Yup.string().required("Department is required"),
-    name: Yup.string().required("Product Name is required"),
-    description: Yup.string().required("Description is required"),
-    price: Yup.number()
-      .min(500, "Price must be greater than 499/-")
-      .required("Price is required"),
-    stock: Yup.number()
-      .min(4, "Stock Available must be greater than 4")
-      .required("Stock Available is required"),
-    supplier: Yup.string().required("Supplier Name is required"),
-    imageUrl: Yup.string().url("Invalid URL").required("Image URL is required"),
-  });
-  
-
-  const handleSubmit = (values) => {
-    values.id = Math.floor(Math.random() * 99999);
-    productApi
-      .createProduct(values)
-      .then((data) => {
-        console.log(" hello createed", data);
-        handleClose();
-      })
-      .catch((err) => {
-        console.log("errrr", err);
-      });
-    // console.log(values);
-  };
-  return (
-    <div>
-      <Modal
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
-      >
-        <Box sx={style}>
-          <div className="text-center text-xs font-semibold ">Edit Details</div>
-          <Formik
-            initialValues={initialValues}
-            validationSchema={validationSchema}
-            onSubmit={handleSubmit}
-          >
-            {({ errors, touched }) => (
-              <Form className="grid grid-cols-12 gap-4">
-                <div className="col-span-12 flex flex-col gap-2">
-                  <label className="text-xs" htmlFor="department">
-                    Department
-                  </label>
-                  <Field
-                    as="select"
-                    id="department"
-                    name="department"
-                    className="px-2 py-4 rounded-md border text-xs "
-                  >
-                    <option value="">Select Department</option>
-                    <option value="Toys">Toys</option>
-                    <option value="Kitchen">Kitchen</option>
-                    <option value="Clothing">Clothing</option>
-                  </Field>
-                  <ErrorMessage
-                    name="department"
-                    component="div"
-                    className="text-red-500 text-xs"
-                  />
-                </div>
-
-                <div className="col-span-6 flex flex-col gap-2">
-                  <label className="text-xs" htmlFor="name">
-                    Product Name
-                  </label>
-                  <Field
-                    type="text"
-                    id="name"
-                    name="name"
-                    className="px-2 py-4 rounded-md border text-xs "
-                  />
-                  <ErrorMessage
-                    name="name"
-                    component="div"
-                    className="text-red-500 text-xs"
-                  />
-                </div>
-                <div className="col-span-6 flex flex-col gap-2">
-                  <label className="text-xs" htmlFor="price">
-                    Price
-                  </label>
-                  <Field
-                    type="number"
-                    id="price"
-                    name="price"
-                    className="px-2 py-4 rounded-md border text-xs "
-                  />
-                  <ErrorMessage
-                    name="price"
-                    component="div"
-                    className="text-red-500 text-xs"
-                  />
-                </div>
-
-                <div className="col-span-6 flex flex-col gap-2">
-                  <label className="text-xs" htmlFor="stock">
-                    Stock Available
-                  </label>
-                  <Field
-                    type="number"
-                    id="stock"
-                    name="stock"
-                    className="px-2 py-4 rounded-md border text-xs "
-                  />
-                  <ErrorMessage
-                    name="stock"
-                    component="div"
-                    className="text-red-500 text-xs"
-                  />
-                </div>
-
-                <div className="col-span-6 flex flex-col gap-2">
-                  <label className="text-xs" htmlFor="supplier">
-                    Supplier Name
-                  </label>
-                  <Field
-                    type="text"
-                    id="supplier"
-                    name="supplier"
-                    className="px-2 py-4 rounded-md border text-xs "
-                  />
-                  <ErrorMessage
-                    name="supplier"
-                    component="div"
-                    className="text-red-500 text-xs"
-                  />
-                </div>
-                <div className="col-span-6 flex flex-col gap-2">
-                  <label className="text-xs" htmlFor="description">
-                    Description
-                  </label>
-                  <Field
-                    type="text"
-                    id="description"
-                    name="description"
-                    className="px-2 py-4 rounded-md border text-xs "
-                  />
-                  <ErrorMessage
-                    name="description"
-                    component="div"
-                    className="text-red-500 text-xs"
-                  />
-                </div>
-                <div className="col-span-6 flex flex-col gap-2">
-                  <label className="text-xs" htmlFor="imageUrl">
-                    Image URL
-                  </label>
-                  <Field
-                    type="text"
-                    id="imageUrl"
-                    name="imageUrl"
-                    className="px-2 py-4 rounded-md border text-xs "
-                  />
-                  <ErrorMessage
-                    name="imageUrl"
-                    component="div"
-                    className="text-red-500 text-xs"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="col-span-12  w-full text-center bg-[#222]  py-4 px-2 rounded-lg text-white text-sm "
-                >
-                  Edit Details
-                </button>
-              </Form>
-            )}
-          </Formik>
-        </Box>
-      </Modal>
-    </div>
   );
 }

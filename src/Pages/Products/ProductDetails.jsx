@@ -4,7 +4,6 @@ import { useParams } from "react-router-dom";
 
 const ProductDetails = () => {
   const { id } = useParams();
-  console.log('console', id);
   const inventoryData = useSelector((state) => state.product.inventoryData);
   console.log(inventoryData);
 
